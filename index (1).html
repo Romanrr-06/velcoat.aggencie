@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>VELCOAT AI — SEE. CONTROL. PERFECT.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vel: { black:'#0a0a0b', card:'#141416', border:'#2a2a2e', orange:'#e87a1a', blue:'#00a3ff', silver:'#b8b8c0', muted:'#6b6b75' }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body { height:100%; margin:0; background:#0a0a0b; color:#f0f0f2; font-family:'Inter',system-ui,sans-serif; overflow-x:hidden; }
+    .screen { display:none; min-height:100dvh; }
+    .screen.on { display:flex; flex-direction:column; }
+    .page { display:none !important; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:calc(78px + var(--safe-bottom)); }
+    .page.on { display:block !important; animation:in .28s cubic-bezier(.22,1,.36,1); }
+    @keyframes in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    @keyframes scan { 0%{top:8%} 100%{top:88%} }
+    @keyframes confFill { from{width:0} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .pulse { animation: pulse 1.7s infinite; }
+    input,select,textarea {
+      background:#1a1a1d !important; border:1px solid #2a2a2e !important; color:#f0f0f2 !important;
+      border-radius:12px; padding:13px 14px; width:100%; font-size:14px; outline:none;
+    }
+    input:focus,select:focus,textarea:focus { border-color:#e87a1a !important; box-shadow:0 0 0 3px rgba(232,122,26,.18); }
+    input::placeholder,textarea::placeholder { color:#5a5a62; }
+    .btn { border:none; border-radius:14px; font-weight:600; cursor:pointer; transition:transform .12s,box-shadow .2s; }
+    .btn:active { transform:scale(.97); }
+    .btn-orange { background:linear-gradient(135deg,#e87a1a,#c45f0a); color:#fff; box-shadow:0 4px 22px rgba(232,122,26,.38); }
+    .btn-ghost { background:#1a1a1d; border:1px solid #2a2a2e; color:#b8b8c0; }
+    .nav-btn { color:#5a5a62; transition:color .2s; }
+    .nav-btn.on { color:#e87a1a; }
+    .nav-btn.on svg { stroke:#e87a1a; }
+    .engine-btn {
+      flex:1; padding:10px 0; border-radius:999px; font-size:13px; font-weight:600;
+      border:1.5px solid #2a2a2e; background:transparent; color:#6b6b75; transition:all .22s;
+    }
+    .engine-btn.active {
+      border-color:#e87a1a; background:rgba(232,122,26,.14); color:#e87a1a;
+      box-shadow:0 0 16px rgba(232,122,26,.2);
+    }
+    .param-box {
+      background:#1a1a1d; border:1px solid #2a2a2e; border-radius:14px;
+      padding:14px 12px; text-align:center;
+    }
+    .param-box input {
+      background:transparent !important; border:none !important; box-shadow:none !important;
+      text-align:center; font-size:18px; font-weight:600; padding:4px 0 !important; color:#f0f0f2 !important;
+    }
+    .param-label { font-size:11px; color:#6b6b75; margin-bottom:2px; display:block; letter-spacing:.02em; }
+    .photo-frame {
+      position:relative; aspect-ratio:1; max-height:300px; background:#111113;
+      border-radius:18px; overflow:hidden; border:1px solid #2a2a2e;
+    }
+    .corner {
+      position:absolute; width:26px; height:26px; border-color:#e87a1a; border-style:solid; z-index:5;
+    }
+    .corner.tl { top:14px; left:14px; border-width:3px 0 0 3px; border-radius:3px 0 0 0; }
+    .corner.tr { top:14px; right:14px; border-width:3px 3px 0 0; border-radius:0 3px 0 0; }
+    .corner.bl { bottom:14px; left:14px; border-width:0 0 3px 3px; border-radius:0 0 0 3px; }
+    .corner.br { bottom:14px; right:14px; border-width:0 3px 3px 0; border-radius:0 0 3px 0; }
+    .scan-line {
+      position:absolute; left:8%; right:8%; height:2px;
+      background:linear-gradient(90deg,transparent,#e87a1a,transparent);
+      box-shadow:0 0 12px #e87a1a; animation:scan 2.4s linear infinite; z-index:4; opacity:0;
+      pointer-events:none;
+    }
+    .scan-line.on { opacity:.85; }
+    .defect-card {
+      position:relative; border-radius:16px; overflow:hidden; background:#161618;
+      border:1px solid #2a2a2e; text-align:left; transition:border-color .2s, transform .15s;
+    }
+    .defect-card:active { transform:scale(.98); }
+    .defect-card .thumb {
+      height:108px; display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(155deg,#1a1a1d,#252220); position:relative; overflow:hidden;
+    }
+    .defect-card .thumb .play {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.35); opacity:0; transition:opacity .2s;
+    }
+    .defect-card:active .play { opacity:1; }
+    .toast {
+      position:fixed; top:58px; left:50%; transform:translateX(-50%) translateY(-14px);
+      z-index:300; padding:11px 18px; border-radius:14px; background:#1c1c1f;
+      border:1px solid #e87a1a; font-size:13px; opacity:0; pointer-events:none;
+      transition:opacity .25s, transform .25s; max-width:88vw; text-align:center;
+      box-shadow:0 0 28px rgba(232,122,26,.28);
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .conf-bar { height:6px; border-radius:99px; background:#2a2a2e; overflow:hidden; }
+    .conf-fill { height:100%; border-radius:99px; animation:confFill .9s cubic-bezier(.22,1,.36,1) forwards; }
+    .glass { background:rgba(10,10,11,.92); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+    .logo-ring {
+      width:108px; height:108px; border-radius:28px;
+      background:linear-gradient(145deg,#061018,#0a1a2a);
+      border:1px solid rgba(0,163,255,.45);
+      box-shadow:0 0 40px rgba(0,163,255,.35), inset 0 0 30px rgba(0,163,255,.08);
+      display:flex; align-items:center; justify-content:center; position:relative;
+    }
+    .engine-tag { font-size:10px; font-weight:700; letter-spacing:.04em; padding:3px 9px; border-radius:99px; }
+    .compare-card { background:#161618; border:1px solid #2a2a2e; border-radius:14px; padding:12px; transition:border-color .2s; }
+    .compare-card.best { border-color:#e87a1a; box-shadow:0 0 0 1px rgba(232,122,26,.25); }
+    .chip-filter {
+      padding:8px 16px; border-radius:999px; font-size:13px; font-weight:600;
+      border:1.5px solid #2a2a2e; background:transparent; color:#6b6b75; white-space:nowrap;
+    }
+    .chip-filter.active { border-color:#e87a1a; background:#e87a1a; color:#fff; }
+    .upload-box {
+      border:1.5px dashed #e87a1a; border-radius:14px; padding:18px 12px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+      background:rgba(232,122,26,.04); color:#e87a1a; font-size:12px; font-weight:500;
+      min-height:80px; cursor:pointer; transition:background .2s;
+    }
+    .upload-box:active { background:rgba(232,122,26,.1); }
+    .upload-box.done { border-style:solid; background:rgba(232,122,26,.12); }
+    .warn-box {
+      background:#2a1a10; border:1px solid #e87a1a55; border-radius:14px; padding:12px 14px;
+      display:flex; gap:10px; align-items:flex-start;
+    }
+    .section-title { font-size:13px; font-weight:700; letter-spacing:.04em; color:#f0f0f2; margin-bottom:12px; }
+    .form-label { font-size:12px; color:#8a8a94; margin-bottom:6px; display:block; }
+    ::-webkit-scrollbar { width:0; height:0; }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth" class="screen on">
+  <div class="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <div class="absolute top-[12%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-[#00a3ff]/18 blur-[100px] pointer-events-none"></div>
+    <div class="relative w-full max-w-[340px] text-center">
+      <div class="flex flex-col items-center mb-9">
+        <div class="logo-ring mb-5" style="animation:float 4s ease-in-out infinite">
+          <svg width="68" height="68" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <linearGradient id="vg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e8f4ff"/><stop offset="55%" stop-color="#00a3ff"/><stop offset="100%" stop-color="#0066aa"/>
+              </linearGradient>
+            </defs>
+            <path d="M20 26 L50 80 L80 26" stroke="url(#vg)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="80" cy="26" r="7.5" fill="#00d4ff"/>
+            <path d="M12 58 Q50 40 88 58" stroke="#00a3ff" stroke-width="2.5" fill="none" opacity=".55"/>
+          </svg>
+        </div>
+        <h1 class="text-[34px] font-extrabold tracking-tight" style="background:linear-gradient(90deg,#fff,#c0d8f0,#00a3ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">VELCOAT</h1>
+        <p class="text-[12px] tracking-[0.28em] text-[#6b6b75] mt-1.5 font-medium">SEE. CONTROL. PERFECT.</p>
+      </div>
+      <div class="flex justify-center gap-3 mb-10 opacity-80">
+        <div class="w-[72px] h-[72px] rounded-2xl bg-[#121214]/90 border border-[#2a2a2e] flex flex-col items-center justify-center gap-1">
+          <span class="text-lg">🔫</span><span class="text-[9px] text-[#6b6b75]">Pistola</span>
+        </div>
+        <div class="w-[72px] h-[72px] rounded-2xl bg-[#121214]/90 border border-[#2a2a2e] flex flex-col items-center justify-center gap-1">
+          <span class="text-lg">🥽</span><span class="text-[9px] text-[#6b6b75]">Gafas AR</span>
+        </div>
+        <div class="w-[72px] h-[72px] rounded-2xl bg-[#121214]/90 border border-[#2a2a2e] flex flex-col items-center justify-center gap-1">
+          <span class="text-lg">🎧</span><span class="text-[9px] text-[#6b6b75]">Audio</span>
+        </div>
+      </div>
+      <button onclick="enterApp()" class="btn btn-orange w-full py-[17px] text-[15px] flex items-center justify-center gap-2 mb-4">
+        INICIAR SESIÓN
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+      </button>
+      <button onclick="enterApp()" class="text-sm text-[#6b6b75]">CREAR CUENTA</button>
+      <p class="mt-12 text-[10px] text-[#3d3d45] tracking-[0.18em]">TECNOLOGÍA INTELIGENTE PARA PINTURA PROFESIONAL</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="screen">
+  <header class="sticky top-0 z-30 glass px-4 h-[52px] flex items-center justify-between border-b border-[#2a2a2e]/70">
+    <div class="flex items-center gap-1.5">
+      <button id="btn-back" class="hidden w-9 h-9 -ml-1 flex items-center justify-center text-[#b8b8c0]" onclick="goBack()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <span class="font-semibold text-[15px] tracking-wide" id="header-title">VELCOAT AI</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="live-engine" class="text-[10px] px-2 py-0.5 rounded-full bg-[#e87a1a]/15 text-[#e87a1a] font-semibold">Gemini</span>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <div id="p-home" class="page on px-4 pt-4">
+    <button onclick="go('analyze')" class="w-full mb-6 flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#161618] border border-[#2a2a2e] text-left">
+      <div class="w-9 h-9 rounded-xl bg-[#e87a1a]/12 flex items-center justify-center shrink-0">
+        <svg class="w-4.5 h-4.5 text-[#e87a1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13px] text-[#b8b8c0] truncate">¿Qué defecto tienes y cómo lo soluciono?</div>
+        <div class="text-[10px] text-[#5a5a62] mt-0.5">Gemini · GPT · Claude · Visión IA</div>
+      </div>
+    </button>
+
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-[12px] font-semibold tracking-[0.08em] text-[#8a8a94]">MÁS CONSULTADOS</h2>
+      <button onclick="go('catalog')" class="text-[12px] text-[#e87a1a] font-medium">Ver catálogo</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-7" id="home-popular"></div>
+
+    <div class="mb-3">
+      <h2 class="text-[12px] font-semibold tracking-[0.08em] text-[#8a8a94]">RECOMENDADO PARA TI</h2>
+      <p class="text-[11px] text-[#5a5a62] mt-0.5">Porque consultas defectos de Secado</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-6" id="home-recommended"></div>
+
+    <div class="mb-3">
+      <h2 class="text-[12px] font-semibold tracking-[0.08em] text-[#8a8a94]">VÍDEOS · CÓMO SOLUCIONARLO</h2>
+    </div>
+    <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 mb-6" id="video-strip"></div>
+
+    <button onclick="go('analyze')" class="btn btn-orange w-full py-4 text-[15px] flex items-center justify-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Analizar defecto con IA
+    </button>
+  </div>
+
+  <!-- ANALYZE -->
+  <div id="p-analyze" class="page px-4 pt-4">
+    <div class="photo-frame mb-4" id="photo-area">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="scan-line" id="scan-line"></div>
+      <div id="photo-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+        <div class="w-14 h-14 rounded-full border-2 border-dashed border-[#e87a1a]/45 flex items-center justify-center mb-3">
+          <svg class="w-7 h-7 text-[#e87a1a]/65" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <p class="text-[13px] text-[#6b6b75] leading-snug">Foto cercana, con luz rasante,<br>sin matrículas ni rostros</p>
+      </div>
+      <img id="photo-preview" class="hidden absolute inset-0 w-full h-full object-cover" alt="Vista previa">
+      <div id="markers" class="hidden absolute inset-0 pointer-events-none z-[3]"></div>
+    </div>
+
+    <div id="vision-warnings" class="hidden space-y-2 mb-4"></div>
+
+    <div class="flex gap-3 mb-5">
+      <button onclick="takePhoto()" class="btn btn-orange flex-1 py-3.5 text-sm flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Hacer foto
+      </button>
+      <button onclick="document.getElementById('file-input').click()" class="btn btn-ghost flex-1 py-3.5 text-sm flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Galería
+      </button>
+      <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="handleFile(event)">
+    </div>
+
+    <div class="mb-5">
+      <label class="text-[12px] text-[#6b6b75] mb-2 block">Pregunta</label>
+      <textarea id="ai-question" rows="2" class="resize-none" placeholder="¿Qué defecto tengo aquí y cómo puedo solucionarlo?">¿Qué defecto tengo aquí y cómo puedo solucionarlo?</textarea>
+    </div>
+
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-2.5">
+        <label class="text-[12px] text-[#6b6b75]">Motor de IA</label>
+        <button onclick="toggleCompare()" id="btn-compare" class="text-[11px] text-[#e87a1a] font-medium flex items-center gap-1">
+          Comparar los 3
+        </button>
+      </div>
+      <div class="flex gap-2" id="engine-row">
+        <button type="button" class="engine-btn active" data-engine="gemini" onclick="selectEngine(this)">Gemini</button>
+        <button type="button" class="engine-btn" data-engine="gpt" onclick="selectEngine(this)">GPT</button>
+        <button type="button" class="engine-btn" data-engine="claude" onclick="selectEngine(this)">Claude</button>
+      </div>
+      <p id="compare-hint" class="hidden text-[11px] text-[#6b6b75] mt-2 text-center">Se lanzará el mismo análisis en Gemini, GPT y Claude</p>
+    </div>
+
+    <button onclick="go('params')" class="btn btn-orange w-full py-4 text-[15px] flex items-center justify-center gap-2">
+      Continuar a parámetros
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- PARAMS -->
+  <div id="p-params" class="page px-4 pt-4">
+    <h2 class="text-[14px] font-semibold tracking-wide mb-0.5">PARÁMETROS DE LA PISTOLA</h2>
+    <p class="text-[12px] text-[#6b6b75] mb-5">(OPCIONAL)</p>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="param-box"><label class="param-label">Presión (bar)</label><input type="number" id="p-presion" value="2.0" step="0.1" min="0"></div>
+      <div class="param-box"><label class="param-label">Boquilla (mm)</label><input type="number" id="p-boquilla" value="1.3" step="0.1" min="0"></div>
+      <div class="param-box"><label class="param-label">Distancia (cm)</label><input type="number" id="p-distancia" value="15" step="1" min="0"></div>
+      <div class="param-box"><label class="param-label">Viscosidad (s DIN4)</label><input type="number" id="p-viscosidad" value="18" step="1" min="0"></div>
+      <div class="param-box"><label class="param-label">Temperatura (°C)</label><input type="number" id="p-temp" value="21" step="1"></div>
+      <div class="param-box"><label class="param-label">Humedad (%)</label><input type="number" id="p-humedad" value="55" step="1" min="0" max="100"></div>
+    </div>
+    <div class="mb-6">
+      <label class="param-label mb-2">Referencia del trabajo (historial)</label>
+      <input type="text" id="p-ref" placeholder="Ej. OT-2026-0142" style="text-align:left;padding:13px 14px">
+    </div>
+    <button onclick="runAnalysis()" class="btn btn-orange w-full py-4 text-[15px] flex items-center justify-center gap-2 mb-3" id="btn-analyze">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Analizar defecto
+    </button>
+    <p class="text-[11px] text-[#6b6b75] text-center leading-relaxed px-1">
+      VELCOAT AI propone posibles defectos con su nivel de confianza. Nunca confirma una causa: verifica siempre en la pieza.
+    </p>
+  </div>
+
+  <!-- RESULT -->
+  <div id="p-result" class="page px-4 pt-4">
+    <div id="result-single" class="space-y-4"></div>
+    <div id="result-compare" class="hidden space-y-3"></div>
+    <div class="mt-6 flex gap-3">
+      <button onclick="go('analyze')" class="btn btn-ghost flex-1 py-3.5 text-sm">Nueva foto</button>
+      <button onclick="go('home')" class="btn btn-orange flex-1 py-3.5 text-sm">Inicio</button>
+    </div>
+  </div>
+
+  <!-- CATALOG -->
+  <div id="p-catalog" class="page px-4 pt-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-[18px] font-bold tracking-wide">CATÁLOGO DE DEFECTOS</h2>
+      <button onclick="go('upload')" class="w-9 h-9 rounded-full bg-[#e87a1a]/15 flex items-center justify-center text-[#e87a1a]">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <div class="flex-1 relative">
+        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6b6b75]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="catalog-search" type="text" placeholder="Buscar defecto..." oninput="filterCatalog()" style="padding-left:36px">
+      </div>
+      <button class="w-11 h-11 rounded-xl bg-[#1a1a1d] border border-[#2a2a2e] flex items-center justify-center text-[#6b6b75]">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+      </button>
+    </div>
+    <div class="flex gap-2 overflow-x-auto pb-3 mb-3" id="catalog-filters">
+      <button class="chip-filter active" data-cat="all" onclick="setFilter(this)">Todos</button>
+      <button class="chip-filter" data-cat="APLICACIÓN" onclick="setFilter(this)">Aplicación</button>
+      <button class="chip-filter" data-cat="CONTAMINACIÓN" onclick="setFilter(this)">Contaminación</button>
+      <button class="chip-filter" data-cat="SECADO" onclick="setFilter(this)">Secado</button>
+      <button class="chip-filter" data-cat="COLOR Y ACABADO" onclick="setFilter(this)">Color y acabado</button>
+    </div>
+    <p class="text-[12px] text-[#6b6b75] mb-3" id="catalog-count">16 defectos</p>
+    <div class="grid grid-cols-2 gap-3" id="catalog-grid"></div>
+  </div>
+
+  <!-- DEFECT DETAIL -->
+  <div id="p-defect" class="page px-4 pt-4">
+    <div id="defect-detail"></div>
+  </div>
+
+  <!-- COMMUNITY -->
+  <div id="p-community" class="page px-4 pt-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Comunidad</h2>
+      <button onclick="go('upload')" class="btn btn-orange text-xs px-3 py-2">+ Subir experiencia</button>
+    </div>
+    <p class="text-sm text-[#6b6b75] mb-5">Casos reales de taller. Aprende de otros pintores.</p>
+    <div class="space-y-3" id="community-feed">
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-full bg-[#00a3ff]/20 flex items-center justify-center text-xs font-bold text-[#00a3ff]">JM</div>
+          <div>
+            <div class="text-sm font-medium">José M. · Taller Norte</div>
+            <div class="text-[11px] text-[#6b6b75]">Piel de naranja · hace 2 días</div>
+          </div>
+        </div>
+        <p class="text-sm text-[#b8b8c0] leading-relaxed mb-3">Capó de Golf con piel de naranja en barniz UHS. Bajé viscosidad a 16s y subí 0.2 bar. Quedó perfecto.</p>
+        <div class="flex gap-2">
+          <div class="flex-1 h-20 rounded-xl bg-[#1a1a1d] flex items-center justify-center text-[11px] text-[#6b6b75]">ANTES</div>
+          <div class="flex-1 h-20 rounded-xl bg-[#1a1a1d] flex items-center justify-center text-[11px] text-[#6b6b75]">DESPUÉS</div>
+        </div>
+      </div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">AR</div>
+          <div>
+            <div class="text-sm font-medium">Ana R. · BodyShop Pro</div>
+            <div class="text-[11px] text-[#6b6b75]">Cráteres · hace 5 días</div>
+          </div>
+        </div>
+        <p class="text-sm text-[#b8b8c0] leading-relaxed mb-3">Silicona en aleta trasera. Anti-silicona + sellador anti-cráter. No volvió a salir.</p>
+        <div class="flex gap-2">
+          <div class="flex-1 h-20 rounded-xl bg-[#1a1a1d] flex items-center justify-center text-[11px] text-[#6b6b75]">ANTES</div>
+          <div class="flex-1 h-20 rounded-xl bg-[#1a1a1d] flex items-center justify-center text-[11px] text-[#6b6b75]">DESPUÉS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD EXPERIENCE -->
+  <div id="p-upload" class="page px-4 pt-4">
+    <p class="text-sm text-[#8a8a94] mb-5 leading-relaxed">Explica cómo solucionaste un defecto real. Se publicará en la ficha del defecto como experiencia de la comunidad.</p>
+
+    <div class="section-title">1 · VÍDEO Y DEFECTO</div>
+    <div class="mb-4">
+      <label class="form-label">Vídeo explicativo</label>
+      <div class="flex gap-3">
+        <div class="upload-box flex-1" onclick="simUpload(this,'video')">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          Grabar
+        </div>
+        <div class="upload-box flex-1" onclick="simUpload(this,'video')">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Galería
+        </div>
+      </div>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Defecto</label>
+      <select id="up-defect"><option value="">Seleccionar defecto</option></select>
+    </div>
+    <div class="mb-6">
+      <label class="form-label">Título</label>
+      <input type="text" id="up-title" placeholder="Ej. Piel de naranja en capó con barniz UHS">
+    </div>
+
+    <div class="section-title">2 · EL CASO</div>
+    <div class="mb-4">
+      <label class="form-label">Qué defecto encontraste</label>
+      <textarea id="up-que" rows="2" class="resize-none"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Cómo se veía inicialmente</label>
+      <textarea id="up-como" rows="2" class="resize-none"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Qué crees que lo causó</label>
+      <textarea id="up-causa" rows="2" class="resize-none"></textarea>
+    </div>
+    <div class="mb-6">
+      <label class="form-label">Qué comprobaciones realizaste</label>
+      <textarea id="up-checks" rows="2" class="resize-none"></textarea>
+    </div>
+
+    <div class="section-title">3 · LA REPARACIÓN</div>
+    <div class="mb-4">
+      <label class="form-label">Herramientas y materiales</label>
+      <textarea id="up-tools" rows="2" class="resize-none"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Procedimiento seguido</label>
+      <textarea id="up-proc" rows="3" class="resize-none"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Cómo quedó la pieza</label>
+      <textarea id="up-result" rows="2" class="resize-none"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Imágenes ANTES</label>
+      <div class="flex gap-3">
+        <div class="upload-box flex-1" onclick="simUpload(this,'img')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Foto</div>
+        <div class="upload-box flex-1" onclick="simUpload(this,'img')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Galería</div>
+      </div>
+    </div>
+    <div class="mb-6">
+      <label class="form-label">Imágenes DESPUÉS</label>
+      <div class="flex gap-3">
+        <div class="upload-box flex-1" onclick="simUpload(this,'img')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Foto</div>
+        <div class="upload-box flex-1" onclick="simUpload(this,'img')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Galería</div>
+      </div>
+    </div>
+
+    <div class="bg-[#1a1810] border border-[#e87a1a]/25 rounded-2xl p-4 mb-5">
+      <div class="text-[12px] font-bold text-[#f0c060] mb-2 tracking-wide">NORMAS DE PUBLICACIÓN</div>
+      <ul class="text-[12px] text-[#b8b8c0] space-y-1.5 leading-relaxed">
+        <li>• No publiques matrículas, rostros ni datos personales sin autorización.</li>
+        <li>• Recorta o difumina la información del cliente y del vehículo.</li>
+        <li>• Describe causas como posibles, no como confirmadas, salvo que estén verificadas.</li>
+      </ul>
+      <label class="flex items-start gap-2.5 mt-3.5 cursor-pointer">
+        <input type="checkbox" id="up-confirm" class="mt-0.5 w-4 h-4 rounded accent-[#e87a1a]">
+        <span class="text-[13px] text-[#f0f0f2]">Confirmo que mi contenido cumple estas normas</span>
+      </label>
+    </div>
+
+    <button onclick="submitExperience()" class="btn btn-orange w-full py-4 text-[15px] flex items-center justify-center gap-2 mb-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      Enviar a revisión
+    </button>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="p-profile" class="page px-4 pt-4">
+    <h2 class="text-lg font-semibold mb-4">Perfil</h2>
+    <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4 mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#00a3ff] to-[#005599] flex items-center justify-center text-lg font-bold">V</div>
+        <div>
+          <div class="font-medium">Usuario VELCOAT</div>
+          <div class="text-[12px] text-[#6b6b75]">Plan PRO · Multi-motor · Visión IA</div>
+        </div>
+      </div>
+    </div>
+    <div class="space-y-0 text-sm">
+      <div class="flex justify-between py-3.5 border-b border-[#2a2a2e]"><span class="text-[#6b6b75]">Motores</span><span class="font-medium">Gemini · GPT · Claude</span></div>
+      <div class="flex justify-between py-3.5 border-b border-[#2a2a2e]"><span class="text-[#6b6b75]">Avisos de visión</span><span class="text-emerald-400">Activo</span></div>
+      <div class="flex justify-between py-3.5 border-b border-[#2a2a2e]"><span class="text-[#6b6b75]">Comparador</span><span class="text-emerald-400">Activo</span></div>
+      <div class="flex justify-between py-3.5"><span class="text-[#6b6b75]">Versión</span><span>1.2.0</span></div>
+    </div>
+  </div>
+
+  <nav class="fixed bottom-0 left-0 right-0 z-40 border-t border-[#2a2a2e] flex" style="background:rgba(10,10,11,.96);backdrop-filter:blur(18px);padding-bottom:var(--safe-bottom)">
+    <button class="nav-btn on flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5" data-page="home" onclick="go('home')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+      <span class="text-[10px] font-medium">Inicio</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5" data-page="catalog" onclick="go('catalog')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      <span class="text-[10px] font-medium">Catálogo</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5" data-page="community" onclick="go('community')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span class="text-[10px] font-medium">Comunidad</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5" data-page="profile" onclick="go('profile')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span class="text-[10px] font-medium">Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  let currentEngine = 'gemini';
+  let compareMode = false;
+  let historyStack = [];
+  let hasPhoto = false;
+  let currentFilter = 'all';
+  let photoQuality = { surface: true, plate: false, face: false, blur: false };
+
+  const engines = {
+    gemini: { name:'Gemini', badge:'bg-blue-500/20 text-blue-400', style:'técnico y directo' },
+    gpt:    { name:'GPT',    badge:'bg-emerald-500/20 text-emerald-400', style:'explicativo y didáctico' },
+    claude: { name:'Claude', badge:'bg-amber-500/20 text-amber-400', style:'preciso y cauteloso' }
+  };
+
+  const defectsDB = {
+    'contaminacion': { title:'Contaminación de la superficie', category:'CONTAMINACIÓN', base:86, views:5, emoji:'🌫️',
+      causes:['Aceite, grasa o silicona residual','Polvo o fibras de cabina','Limpieza insuficiente'],
+      solutions:['Desengrasar con anti-silicona en dos pasadas cruzadas','Soplar con aire filtrado + trapo antiestático','Revisar filtros de cabina'],
+      tip:'Si el defecto vuelve, aplica sellador anti-cráter antes de repintar.',
+      video:'Cómo eliminar contaminación superficial en 3 pasos' },
+    'crateres': { title:'Cráteres', category:'CONTAMINACIÓN', base:89, views:0, emoji:'🕳️',
+      causes:['Silicona o contaminante graso','Contaminación en línea de aire','Aditivos incompatibles'],
+      solutions:['Limpieza exhaustiva con anti-silicona','Verifica y limpia filtros de aire','Usa aditivo anti-cráter si persiste'],
+      tip:'Nunca pintes sobre un cráter sin eliminar la causa.',
+      video:'Diagnóstico y reparación de ojos de pez' },
+    'piel-naranja': { title:'Piel de naranja', category:'APLICACIÓN', base:91, views:3, emoji:'🍊',
+      causes:['Presión baja o distancia excesiva','Viscosidad alta','Pasada rápida o capa gruesa'],
+      solutions:['Sube 0.2–0.3 bar y acerca a 12–15 cm','Ajusta viscosidad a 16–18 s DIN4','Capas más finas con solape 50%'],
+      tip:'En barnices UHS la ventana de nivelación es corta.',
+      video:'Corregir piel de naranja sin repintar' },
+    'descuelgue': { title:'Descuelgue', category:'APLICACIÓN', base:87, views:2, emoji:'💧',
+      causes:['Capa excesivamente gruesa','Distancia corta o velocidad lenta','Viscosidad baja'],
+      solutions:['Reduce caudal y aumenta velocidad','Mantén distancia 15–20 cm','Ajusta viscosidad al rango'],
+      tip:'Si el goteo está fresco, a veces se puede absorber con pincel limpio.',
+      video:'Evitar y reparar descuelgues' },
+    'velados': { title:'Velados', category:'SECADO', base:79, views:0, emoji:'💨',
+      causes:['Humedad de cabina >65%','Temperatura baja','Capa gruesa que atrapa solvente'],
+      solutions:['Eleva cabina a 22–25 °C','Aumenta flujo de aire y oreo','Reduce espesor y usa diluyente adecuado'],
+      tip:'Los velados suelen desaparecer con ligero repulido si el barniz ha curado.',
+      video:'Eliminar velados de barniz' },
+    'hervidos': { title:'Hervidos o burbujas', category:'SECADO', base:84, views:0, emoji:'🫧',
+      causes:['Solvente atrapado por capa gruesa','Calentamiento demasiado rápido','Presión alta o pistola muy cerca'],
+      solutions:['Reduce espesor y respeta tiempos de oreo','Sube temperatura gradualmente','Baja presión y mantén distancia'],
+      tip:'Si hay hervidos profundos, lija hasta eliminarlos y reaplica fino.',
+      video:'Causas y solución de hervidos' },
+    'tonalidad': { title:'Diferencias de tonalidad', category:'COLOR Y ACABADO', base:82, views:1, emoji:'🎨',
+      causes:['Mezcla incorrecta de color','Aplicación desigual de base','Iluminación de cabina irregular'],
+      solutions:['Verificar fórmula y agitación','Aplicar base con pasadas uniformes','Comparar bajo luz día y cabina'],
+      tip:'Siempre haz un panel de prueba antes de pintar la pieza completa.',
+      video:'Igualar color y evitar manchas' },
+    'marcas-lijado': { title:'Marcas de lijado', category:'APLICACIÓN', base:80, views:1, emoji:'〰️',
+      causes:['Lija demasiado gruesa','No se pasó a grano fino','Presión excesiva al lijar'],
+      solutions:['Seguir secuencia de granos','Acabar con P800–P1000 en seco o P1000–P1500 en húmedo','No apretar el taco'],
+      tip:'Las marcas de lijado se ven más en colores oscuros y metalizados.',
+      video:'Lijado correcto antes de pintar' },
+    'ojos-pez': { title:'Ojos de pez', category:'CONTAMINACIÓN', base:88, views:0, emoji:'👁️',
+      causes:['Silicona en superficie o aire','Productos de limpieza residuales','Cera o polish antiguo'],
+      solutions:['Anti-silicona + desengrasante','Limpiar pistola y mangueras','Aditivo anti-cráter en casos reincidentes'],
+      tip:'Si aparece en varias piezas, revisa la línea de aire comprimido.',
+      video:'Ojos de pez: de la detección a la reparación' },
+    'seco-spray': { title:'Seco de spray / overspray', category:'APLICACIÓN', base:75, views:0, emoji:'🌫️',
+      causes:['Distancia excesiva','Presión alta con poco caudal','Pasada demasiado rápida'],
+      solutions:['Acercar pistola a 12–18 cm','Ajustar abanico y caudal','Pasadas más lentas y solapadas'],
+      tip:'El overspray seco se nota al tacto: superficie áspera.',
+      video:'Evitar overspray seco' },
+    'ampollas': { title:'Ampollas', category:'SECADO', base:83, views:0, emoji:'🔮',
+      causes:['Humedad atrapada bajo la pintura','Soporte no seco','Incompatibilidad de capas'],
+      solutions:['Asegurar secado completo del soporte','No pintar sobre imprimaciones húmedas','Respetar tiempos entre capas'],
+      tip:'Las ampollas por humedad suelen reaparecer si no se elimina la causa.',
+      video:'Diagnóstico de ampollas' },
+    'cuarteado': { title:'Cuarteado / craquelado', category:'COLOR Y ACABADO', base:81, views:0, emoji:'🕷️',
+      causes:['Capa demasiado gruesa','Incompatibilidad de productos','Secado forzado excesivo'],
+      solutions:['Respetar espesores máximos','Usar sistemas compatibles del mismo fabricante','No forzar el secado'],
+      tip:'El cuarteado suele requerir lijar hasta el soporte sano.',
+      video:'Reparar cuarteado de barniz' },
+    'manchas': { title:'Manchas / mapado', category:'COLOR Y ACABADO', base:77, views:0, emoji:'🗺️',
+      causes:['Absorción irregular del soporte','Imprimación mal aplicada','Lijado irregular'],
+      solutions:['Aplicar imprimación uniforme','Lijar con taco y grano correcto','Sellador si el soporte es muy absorbente'],
+      tip:'El mapado se ve más en colores sólidos claros.',
+      video:'Eliminar mapado en color' },
+    'perdida-brillo': { title:'Pérdida de brillo', category:'COLOR Y ACABADO', base:76, views:0, emoji:'✨',
+      causes:['Barniz mal catalizado','Contaminación en el barniz','Pulido agresivo demasiado pronto'],
+      solutions:['Verificar ratio de catalizador','Filtrar el barniz','Esperar curado completo antes de pulir'],
+      tip:'A veces un pulido suave recupera el brillo si el barniz está bien curado.',
+      video:'Recuperar brillo en barniz' },
+    'goteo': { title:'Goteos', category:'APLICACIÓN', base:86, views:1, emoji:'💦',
+      causes:['Capa gruesa','Distancia corta','Viscosidad baja'],
+      solutions:['Reducir caudal','Aumentar velocidad de pasada','Ajustar viscosidad'],
+      tip:'Goteos frescos se pueden corregir con pincel y repaso ligero.',
+      video:'Corregir goteos en barniz' },
+    'suciedad': { title:'Suciedad / motas', category:'CONTAMINACIÓN', base:84, views:2, emoji:'✨',
+      causes:['Polvo en cabina','Ropa o trapos que sueltan fibras','Filtros saturados'],
+      solutions:['Limpiar cabina y soplar pieza','Usar ropa adecuada','Cambiar filtros'],
+      tip:'Las motas se quitan con lijado fino y repulido si el barniz está curado.',
+      video:'Cabina limpia: menos motas' }
+  };
+
+  function enterApp() {
+    document.getElementById('auth').classList.remove('on');
+    document.getElementById('app').classList.add('on');
+    go('home', true);
+  }
+
+  function go(page, replace=false) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    const el = document.getElementById('p-'+page);
+    if (el) el.classList.add('on');
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      const main = ['home','catalog','community','profile'].includes(page);
+      b.classList.toggle('on', b.dataset.page === page || (!main && page!=='upload' && page!=='defect' && b.dataset.page==='home') || (page==='upload' && b.dataset.page==='community') || (page==='defect' && b.dataset.page==='catalog'));
+    });
+    const titles = {
+      home:'VELCOAT AI', analyze:'VELCOAT AI', params:'VELCOAT AI', result:'Resultado',
+      catalog:'Catálogo', defect:'Defecto', community:'Comunidad', upload:'SUBIR EXPERIENCIA', profile:'Perfil'
+    };
+    document.getElementById('header-title').textContent = titles[page] || 'VELCOAT AI';
+    document.getElementById('btn-back').classList.toggle('hidden', !['analyze','params','result','upload','defect'].includes(page));
+    if (!replace) historyStack.push(page);
+  }
+
+  function goBack() {
+    if (historyStack.length > 1) { historyStack.pop(); go(historyStack[historyStack.length-1], true); }
+    else go('home', true);
+  }
+
+  function selectEngine(btn) {
+    if (compareMode) return;
+    document.querySelectorAll('.engine-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentEngine = btn.dataset.engine;
+    document.getElementById('live-engine').textContent = engines[currentEngine].name;
+  }
+
+  function toggleCompare() {
+    compareMode = !compareMode;
+    const row = document.getElementById('engine-row');
+    const hint = document.getElementById('compare-hint');
+    const btn = document.getElementById('btn-compare');
+    if (compareMode) {
+      row.querySelectorAll('.engine-btn').forEach(b => b.classList.add('active'));
+      hint.classList.remove('hidden');
+      btn.textContent = '✕ Cancelar comparación';
+      document.getElementById('live-engine').textContent = '×3';
+    } else {
+      row.querySelectorAll('.engine-btn').forEach(b => b.classList.toggle('active', b.dataset.engine===currentEngine));
+      hint.classList.add('hidden');
+      btn.textContent = 'Comparar los 3';
+      document.getElementById('live-engine').textContent = engines[currentEngine].name;
+    }
+  }
+
+  function takePhoto() {
+    hasPhoto = true;
+    photoQuality = { surface: Math.random() > 0.25, plate: Math.random() > 0.7, face: Math.random() > 0.85, blur: Math.random() > 0.8 };
+    showPhotoUI();
+    runVisionCheck();
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    hasPhoto = true;
+    photoQuality = { surface: true, plate: Math.random()>0.75, face: false, blur: false };
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('photo-placeholder').classList.add('hidden');
+      const img = document.getElementById('photo-preview');
+      img.classList.remove('hidden');
+      img.src = ev.target.result;
+      document.getElementById('scan-line').classList.add('on');
+      setTimeout(() => document.getElementById('scan-line').classList.remove('on'), 2400);
+      runVisionCheck();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showPhotoUI() {
+    document.getElementById('photo-placeholder').classList.add('hidden');
+    const img = document.getElementById('photo-preview');
+    img.classList.remove('hidden');
+    img.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a1d"/><stop offset="40%" stop-color="#2a2520"/><stop offset="100%" stop-color="#18181b"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><circle cx="160" cy="170" r="28" fill="#3a3228" opacity=".6"/><circle cx="240" cy="210" r="18" fill="#3a3228" opacity=".45"/><text x="200" y="320" text-anchor="middle" fill="#6b6b75" font-family="system-ui" font-size="13">Foto simulada · luz rasante</text></svg>');
+    const scan = document.getElementById('scan-line');
+    scan.classList.add('on');
+    setTimeout(() => scan.classList.remove('on'), 2600);
+    setTimeout(() => {
+      const m = document.getElementById('markers');
+      m.classList.remove('hidden');
+      m.innerHTML = '<div class="absolute w-8 h-8 rounded-full border-2 border-[#e87a1a] bg-[#e87a1a]/15" style="top:38%;left:36%"></div><div class="absolute w-6 h-6 rounded-full border-2 border-[#e87a1a] bg-[#e87a1a]/15" style="top:52%;left:58%"></div>';
+    }, 900);
+  }
+
+  function runVisionCheck() {
+    const box = document.getElementById('vision-warnings');
+    const warns = [];
+    if (!photoQuality.surface) warns.push({ icon:'⚠️', title:'Superficie del vehículo no detectada', text:'Acerca más la cámara a la pieza, usa luz rasante y evita fondos. Sin superficie visible el diagnóstico pierde fiabilidad.' });
+    if (photoQuality.plate) warns.push({ icon:'🚗', title:'Posible matrícula visible', text:'Por privacidad, recorta o difumina la matrícula antes de analizar o publicar. VELCOAT no almacena datos personales.' });
+    if (photoQuality.face) warns.push({ icon:'👤', title:'Posible rostro detectado', text:'Evita incluir personas. Recorta la imagen para centrarte solo en la pieza.' });
+    if (photoQuality.blur) warns.push({ icon:'📷', title:'Imagen borrosa o con poca luz', text:'Repite la foto con más luz y enfoca bien el defecto. La visión IA necesita detalle.' });
+    if (warns.length === 0) { box.classList.add('hidden'); box.innerHTML = ''; showToast('Foto OK · superficie detectada'); return; }
+    box.classList.remove('hidden');
+    box.innerHTML = warns.map(w => '<div class="warn-box"><span class="text-lg">'+w.icon+'</span><div><div class="text-[13px] font-semibold text-[#f0a050]">'+w.title+'</div><div class="text-[12px] text-[#b8b8c0] mt-0.5 leading-relaxed">'+w.text+'</div></div></div>').join('');
+    showToast(warns.length + ' aviso' + (warns.length>1?'s':'') + ' de visión IA');
+  }
+
+  function openDefect(key) {
+    const d = defectsDB[key];
+    if (!d) return;
+    document.getElementById('defect-detail').innerHTML = `
+      <div class="rounded-2xl overflow-hidden border border-[#2a2a2e] mb-4 bg-[#161618]">
+        <div class="h-44 flex items-center justify-center relative" style="background:linear-gradient(160deg,#1a1a1d,#252220)">
+          <span class="text-6xl opacity-40">${d.emoji}</span>
+          <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div class="w-14 h-14 rounded-full bg-[#e87a1a] flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="p-3 text-[12px] text-[#6b6b75]">▶ ${d.video}</div>
+      </div>
+      <div class="text-[10px] font-bold text-[#e87a1a] tracking-wide mb-1">${d.category}</div>
+      <h2 class="text-xl font-semibold mb-4">${d.title}</h2>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4 mb-3">
+        <h4 class="text-[11px] font-semibold text-[#6b6b75] mb-2 tracking-wide">POSIBLES CAUSAS</h4>
+        <ul class="space-y-1.5">${d.causes.map(c=>'<li class="text-sm text-[#b8b8c0] flex gap-2"><span class="text-[#e87a1a]">•</span>'+c+'</li>').join('')}</ul>
+      </div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4 mb-3">
+        <h4 class="text-[11px] font-semibold text-[#6b6b75] mb-2 tracking-wide">CÓMO SOLUCIONARLO</h4>
+        <ul class="space-y-1.5">${d.solutions.map(s=>'<li class="text-sm text-emerald-400/90 flex gap-2"><span>✓</span>'+s+'</li>').join('')}</ul>
+      </div>
+      <div class="bg-[#1a1510] border border-[#e87a1a]/30 rounded-2xl p-4 mb-4 flex gap-2">
+        <span>💡</span><p class="text-sm text-[#e8c9a0]">${d.tip}</p>
+      </div>
+      <button onclick="document.getElementById('ai-question').value='Tengo ${d.title.toLowerCase()}. ¿Cómo lo soluciono?'; go('analyze')" class="btn btn-orange w-full py-3.5 text-sm">Analizar este defecto con IA</button>`;
+    go('defect');
+  }
+
+  function matchDefect(q) {
+    q = q.toLowerCase();
+    if (q.includes('naranja') || q.includes('piel')) return defectsDB['piel-naranja'];
+    if (q.includes('contamin') || q.includes('silicon') || q.includes('grasa')) return defectsDB['contaminacion'];
+    if (q.includes('velad')) return defectsDB['velados'];
+    if (q.includes('hervid') || q.includes('burbuj')) return defectsDB['hervidos'];
+    if (q.includes('cráter') || q.includes('crater') || q.includes('ojo')) return defectsDB['crateres'];
+    if (q.includes('goteo') || q.includes('descuelgue')) return defectsDB['descuelgue'];
+    if (q.includes('tonal') || q.includes('color')) return defectsDB['tonalidad'];
+    if (q.includes('lijado')) return defectsDB['marcas-lijado'];
+    const p = parseFloat(document.getElementById('p-presion').value)||2;
+    const d = parseFloat(document.getElementById('p-distancia').value)||15;
+    if (p < 1.8 || d > 20) return defectsDB['piel-naranja'];
+    return defectsDB['contaminacion'];
+  }
+
+  function engineConfidence(base, engine) {
+    const delta = { gemini:0, gpt:-2, claude:1 }[engine] || 0;
+    let conf = Math.min(98, Math.max(55, base + delta + Math.floor(Math.random()*3)-1));
+    if (!hasPhoto) conf = Math.max(50, conf - 15);
+    if (!photoQuality.surface) conf = Math.max(40, conf - 25);
+    if (photoQuality.blur) conf = Math.max(45, conf - 12);
+    return conf;
+  }
+
+  function runAnalysis() {
+    const question = document.getElementById('ai-question').value.trim();
+    const defect = matchDefect(question);
+    const btn = document.getElementById('btn-analyze');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="pulse">Analizando…</span>';
+    showToast(compareMode ? 'Comparando Gemini · GPT · Claude…' : 'Analizando con ' + engines[currentEngine].name + '…');
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Analizar defecto';
+      if (compareMode) renderCompare(defect);
+      else renderSingle(defect, currentEngine);
+      go('result');
+    }, compareMode ? 1400 : 950);
+  }
+
+  function getParams() {
+    return {
+      presion: document.getElementById('p-presion').value,
+      boquilla: document.getElementById('p-boquilla').value,
+      distancia: document.getElementById('p-distancia').value,
+      viscosidad: document.getElementById('p-viscosidad').value,
+      temp: document.getElementById('p-temp').value,
+      humedad: document.getElementById('p-humedad').value,
+      ref: document.getElementById('p-ref').value
+    };
+  }
+
+  function renderSingle(defect, engKey) {
+    document.getElementById('result-single').classList.remove('hidden');
+    document.getElementById('result-compare').classList.add('hidden');
+    const eng = engines[engKey];
+    const conf = engineConfidence(defect.base, engKey);
+    const params = getParams();
+    const confColor = conf>=85 ? '#34d399' : conf>=70 ? '#fbbf24' : '#fb923c';
+    let visionNote = '';
+    if (!hasPhoto) visionNote = '<div class="warn-box mb-3"><span>📷</span><div><div class="text-[13px] font-semibold text-[#f0a050]">Sin foto</div><div class="text-[12px] text-[#b8b8c0]">El análisis se basa solo en tu descripción y parámetros. Sube una foto de la superficie para mayor precisión.</div></div></div>';
+    else if (!photoQuality.surface) visionNote = '<div class="warn-box mb-3"><span>⚠️</span><div><div class="text-[13px] font-semibold text-[#f0a050]">Superficie no detectada con claridad</div><div class="text-[12px] text-[#b8b8c0]">La confianza se ha reducido. Acerca la cámara a la pieza y usa luz rasante.</div></div></div>';
+    else if (photoQuality.plate) visionNote = '<div class="warn-box mb-3"><span>🚗</span><div><div class="text-[13px] font-semibold text-[#f0a050]">Matrícula detectada</div><div class="text-[12px] text-[#b8b8c0]">Recuerda no publicar ni compartir imágenes con matrículas visibles.</div></div></div>';
+    document.getElementById('result-single').innerHTML = visionNote + `
+      <div class="flex items-center gap-2 mb-1"><span class="engine-tag ${eng.badge}">${eng.name}</span><span class="text-[11px] text-[#6b6b75]">· ${eng.style}</span></div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <div class="flex justify-between items-start mb-3">
+          <div><div class="text-[10px] font-bold text-[#e87a1a] tracking-wide mb-0.5">${defect.category}</div><h3 class="text-lg font-semibold leading-tight">${defect.title}</h3></div>
+          <div class="text-right"><div class="text-2xl font-bold tabular-nums" style="color:${confColor}">${conf}%</div><div class="text-[10px] text-[#6b6b75]">confianza</div></div>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:linear-gradient(90deg,#e87a1a,#f0a050)"></div></div>
+      </div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <h4 class="text-[11px] font-semibold text-[#6b6b75] mb-2.5 tracking-wide">POSIBLES CAUSAS</h4>
+        <ul class="space-y-2">${defect.causes.map(c=>'<li class="flex gap-2 text-sm text-[#b8b8c0]"><span class="text-[#e87a1a]">•</span><span>'+c+'</span></li>').join('')}</ul>
+      </div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <h4 class="text-[11px] font-semibold text-[#6b6b75] mb-2.5 tracking-wide">CÓMO SOLUCIONARLO</h4>
+        <ul class="space-y-2">${defect.solutions.map(s=>'<li class="flex gap-2 text-sm text-emerald-400/90"><span>✓</span><span>'+s+'</span></li>').join('')}</ul>
+      </div>
+      <div class="bg-[#1a1510] border border-[#e87a1a]/30 rounded-2xl p-4 flex gap-2.5 items-start"><span class="text-lg">💡</span><p class="text-sm text-[#e8c9a0] leading-relaxed">${defect.tip}</p></div>
+      <div class="bg-[#161618] border border-[#2a2a2e] rounded-2xl p-4">
+        <h4 class="text-[11px] font-semibold text-[#6b6b75] mb-2.5 tracking-wide">PARÁMETROS REGISTRADOS</h4>
+        <div class="grid grid-cols-3 gap-2 text-center text-[12px]">
+          <div><div class="text-[#6b6b75]">Presión</div><div class="font-medium">${params.presion} bar</div></div>
+          <div><div class="text-[#6b6b75]">Boquilla</div><div class="font-medium">${params.boquilla} mm</div></div>
+          <div><div class="text-[#6b6b75]">Distancia</div><div class="font-medium">${params.distancia} cm</div></div>
+          <div><div class="text-[#6b6b75]">Viscosidad</div><div class="font-medium">${params.viscosidad} s</div></div>
+          <div><div class="text-[#6b6b75]">Temp.</div><div class="font-medium">${params.temp} °C</div></div>
+          <div><div class="text-[#6b6b75]">Humedad</div><div class="font-medium">${params.humedad}%</div></div>
+        </div>
+        ${params.ref ? '<div class="mt-3 pt-3 border-t border-[#2a2a2e] text-[12px] text-[#6b6b75]">Ref: <span class="text-[#b8b8c0]">'+params.ref+'</span></div>' : ''}
+      </div>
+      <p class="text-[11px] text-[#6b6b75] text-center leading-relaxed">Generado por <strong class="text-[#b8b8c0]">${eng.name}</strong> vía VELCOAT AI.<br>Verifica siempre en la pieza real.</p>`;
+  }
+
+  function renderCompare(defect) {
+    document.getElementById('result-single').classList.add('hidden');
+    document.getElementById('result-compare').classList.remove('hidden');
+    const results = ['gemini','gpt','claude'].map(k => ({ key:k, eng:engines[k], conf:engineConfidence(defect.base, k) }));
+    results.sort((a,b) => b.conf - a.conf);
+    const best = results[0].key;
+    document.getElementById('result-compare').innerHTML = `
+      <div class="mb-2"><div class="text-[10px] font-bold text-[#e87a1a] tracking-wide">${defect.category}</div>
+      <h3 class="text-lg font-semibold">${defect.title}</h3><p class="text-[12px] text-[#6b6b75] mt-1">Comparación multi-motor</p></div>
+      ${results.map(r => '<div class="compare-card '+(r.key===best?'best':'')+'"><div class="flex items-center justify-between mb-2"><span class="engine-tag '+r.eng.badge+'">'+r.eng.name+'</span><div class="flex items-center gap-2">'+(r.key===best?'<span class="text-[10px] text-[#e87a1a] font-semibold">MEJOR</span>':'')+'<span class="text-lg font-bold tabular-nums">'+r.conf+'%</span></div></div><div class="conf-bar mb-2"><div class="conf-fill" style="width:'+r.conf+'%;background:linear-gradient(90deg,#e87a1a,#f0a050)"></div></div><p class="text-[12px] text-[#8a8a94]">Estilo: '+r.eng.style+'</p><p class="text-[12px] text-[#b8b8c0] mt-1.5">'+defect.solutions[0]+'</p></div>').join('')}
+      <div class="bg-[#1a1510] border border-[#e87a1a]/30 rounded-2xl p-4 flex gap-2.5 items-start mt-1"><span class="text-lg">💡</span><p class="text-sm text-[#e8c9a0] leading-relaxed">${defect.tip}</p></div>`;
+  }
+
+  function setFilter(btn) {
+    document.querySelectorAll('.chip-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.cat;
+    filterCatalog();
+  }
+
+  function filterCatalog() {
+    const q = (document.getElementById('catalog-search').value || '').toLowerCase();
+    const entries = Object.entries(defectsDB).filter(([k,d]) => {
+      const matchCat = currentFilter === 'all' || d.category === currentFilter;
+      const matchQ = !q || d.title.toLowerCase().includes(q) || d.category.toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+    document.getElementById('catalog-count').textContent = entries.length + ' defectos';
+    document.getElementById('catalog-grid').innerHTML = entries.map(([key,d]) => defectCard(key,d)).join('');
+  }
+
+  function defectCard(key, d) {
+    return '<button onclick="openDefect(\''+key+'\')" class="defect-card"><div class="thumb"><span class="text-4xl opacity-45">'+d.emoji+'</span><div class="play"><div class="w-10 h-10 rounded-full bg-[#e87a1a] flex items-center justify-center"><svg class="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="p-3"><span class="text-[10px] font-bold text-[#e87a1a] tracking-wide">'+d.category+'</span><div class="text-[13px] font-medium mt-0.5 leading-snug line-clamp-2">'+d.title+'</div><div class="flex items-center gap-1 mt-1.5 text-[11px] text-[#6b6b75]"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> '+d.views+' consultas</div></div></button>';
+  }
+
+  function simUpload(el, type) {
+    el.classList.add('done');
+    el.innerHTML = type === 'video'
+      ? '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Vídeo listo'
+      : '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Imagen lista';
+    showToast(type === 'video' ? 'Vídeo añadido (simulado)' : 'Imagen añadida (simulado)');
+  }
+
+  function submitExperience() {
+    if (!document.getElementById('up-confirm').checked) { showToast('Debes confirmar las normas de publicación'); return; }
+    if (!document.getElementById('up-defect').value) { showToast('Selecciona un defecto'); return; }
+    showToast('Experiencia enviada a revisión ✓');
+    setTimeout(() => go('community'), 1200);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  function init() {
+    const popular = ['contaminacion','piel-naranja'];
+    const recommended = ['velados','hervidos'];
+    document.getElementById('home-popular').innerHTML = popular.map(k => defectCard(k, defectsDB[k])).join('');
+    document.getElementById('home-recommended').innerHTML = recommended.map(k => defectCard(k, defectsDB[k])).join('');
+    const vids = Object.entries(defectsDB).slice(0,6);
+    document.getElementById('video-strip').innerHTML = vids.map(([k,d]) =>
+      '<button onclick="openDefect(\''+k+'\')" class="shrink-0 w-40 rounded-2xl overflow-hidden border border-[#2a2a2e] bg-[#161618] text-left"><div class="h-24 flex items-center justify-center relative" style="background:linear-gradient(160deg,#1a1a1d,#252220)"><span class="text-3xl opacity-40">'+d.emoji+'</span><div class="absolute inset-0 flex items-center justify-center bg-black/25"><div class="w-9 h-9 rounded-full bg-[#e87a1a]/90 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><div class="p-2.5"><div class="text-[11px] font-medium leading-snug line-clamp-2">'+d.video+'</div></div></button>'
+    ).join('');
+    filterCatalog();
+    const sel = document.getElementById('up-defect');
+    Object.entries(defectsDB).forEach(([k,d]) => {
+      const opt = document.createElement('option');
+      opt.value = k; opt.textContent = d.title; sel.appendChild(opt);
+    });
+  }
+  init();
+</script>
+</body>
+</html>
